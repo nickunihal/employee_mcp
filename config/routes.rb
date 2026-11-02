@@ -12,7 +12,15 @@ mcp_server = MCP::Server.new(
     SearchEmployeesTool,
     GetEmployeeTool,
     EmployeeCountTool
+  ],
+  resources: [
+    DepartmentDirectoryResource
+  ],
+  resource_templates: [
+    EmployeeProfileResourceTemplate
   ]
+
+
 )
 
 mcp_transport =
