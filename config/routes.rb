@@ -18,9 +18,11 @@ mcp_server = MCP::Server.new(
   ],
   resource_templates: [
     EmployeeProfileResourceTemplate
+  ],
+  prompts: [
+    DepartmentEmployeeReportPrompt,
+    DepartmentOverviewPrompt
   ]
-
-
 )
 
 mcp_transport =
