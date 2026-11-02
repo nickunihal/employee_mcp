@@ -44,29 +44,7 @@ class SearchEmployeesTool < MCP::Tool
 
       limit = [[limit.to_i, 1].max, 50].min
 
-      employees = Employee.includes(:department)
-
-      if name.present?
-        employees = employees.where(
-          "employees.name ILIKE ?",
-          "%#{name}%"
-        )
-      end
-
-      if email.present?
-        employees = employees.where(
-          "employees.email ILIKE ?",
-          "%#{email}%"
-        )
-      end
-
-      if department.present?
-        employees = employees.joins(:department)
-                             .where(
-                               "departments.name ILIKE ?",
-                               "%#{department}%"
-                             )
-      end
+      employees = SearchEmployeeService.call(name: name,email: email,department: department)
 
       results = employees.limit(limit).map do |employee|
         {
@@ -91,7 +69,7 @@ class SearchEmployeesTool < MCP::Tool
     def response(message)
       MCP::Tool::Response.new([
         {
-          type: "text",
+        type: "text",
           text: message
         }
       ])
