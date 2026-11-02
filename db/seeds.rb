@@ -38,6 +38,6 @@ departments.each do |name|
       employee.active = true
     end
   end
-end
+	end
 
 puts "Created #{Employee.count} employees"

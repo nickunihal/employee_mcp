@@ -1,7 +1,7 @@
 class SearchEmployeeService
   attr_reader :name, :email, :department
 
-  def initialize(name: ,email: ,department: )
+  def initialize(name: nil, email: nil, department: nil)
     @name       = name
     @email      = email
     @department = department
@@ -17,26 +17,26 @@ class SearchEmployeeService
     scope
   end
 
-  def self.call(name: ,email: ,department: )
-    new(name: name,email: email,department: department).call
+  def self.call(name: nil, email: nil, department: nil)
+    new(name: name, email: email, department: department).call
   end
 
   private
 
   def filter_by_name(scope)
-    return scope unless name
+    return scope if name.blank?
 
     scope.where("employees.name ILIKE ?", "%#{sanitize_sql_like(name)}%")
   end
 
   def filter_by_email(scope)
-    return scope unless email
+    return scope if email.blank?
 
     scope.where("employees.email ILIKE ?", "%#{sanitize_sql_like(email)}%")
   end
 
   def filter_by_department(scope)
-    return scope unless department
+    return scope if department.blank?
 
     scope.joins(:department)
          .where("departments.name ILIKE ?", "%#{sanitize_sql_like(department)}%")

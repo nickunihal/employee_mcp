@@ -9,7 +9,9 @@ mcp_server = MCP::Server.new(
     by name, email or department.
   INSTRUCTIONS
   tools: [
-    SearchEmployeesTool
+    SearchEmployeesTool,
+    GetEmployeeTool,
+    EmployeeCountTool
   ]
 )
 

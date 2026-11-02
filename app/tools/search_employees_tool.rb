@@ -1,5 +1,3 @@
-# app/tools/search_employees_tool.rb
-
 class SearchEmployeesTool < MCP::Tool
   description <<~DESC
     Search employees by name, email or department.
@@ -31,13 +29,7 @@ class SearchEmployeesTool < MCP::Tool
   )
 
   class << self
-    def call(
-      name: nil,
-      email: nil,
-      department: nil,
-      limit: 20,
-      server_context:
-    )
+    def call(name: nil, email: nil, department: nil, limit: 20, server_context: )
       if [name, email, department].all?(&:blank?)
         return response("Provide at least one search filter.")
       end
@@ -70,7 +62,7 @@ class SearchEmployeesTool < MCP::Tool
       MCP::Tool::Response.new([
         {
         type: "text",
-          text: message
+        text: message
         }
       ])
     end
