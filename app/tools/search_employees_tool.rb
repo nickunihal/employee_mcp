@@ -1,0 +1,100 @@
+# app/tools/search_employees_tool.rb
+
+class SearchEmployeesTool < MCP::Tool
+  description <<~DESC
+    Search employees by name, email or department.
+    Returns employee details including name, email,
+    designation and department.
+  DESC
+
+  input_schema(
+    properties: {
+      name: {
+        type: "string",
+        description: "Employee name to search for"
+      },
+      email: {
+        type: "string",
+        description: "Employee email to search for"
+      },
+      department: {
+        type: "string",
+        description: "Department name to filter by"
+      },
+      limit: {
+        type: "integer",
+        description: "Maximum number of results (1-50)",
+        minimum: 1,
+        maximum: 50
+      }
+    }
+  )
+
+  class << self
+    def call(
+      name: nil,
+      email: nil,
+      department: nil,
+      limit: 20,
+      server_context:
+    )
+      if [name, email, department].all?(&:blank?)
+        return response("Provide at least one search filter.")
+      end
+
+      limit = [[limit.to_i, 1].max, 50].min
+
+      employees = Employee.includes(:department)
+
+      if name.present?
+        employees = employees.where(
+          "employees.name ILIKE ?",
+          "%#{name}%"
+        )
+      end
+
+      if email.present?
+        employees = employees.where(
+          "employees.email ILIKE ?",
+          "%#{email}%"
+        )
+      end
+
+      if department.present?
+        employees = employees.joins(:department)
+                             .where(
+                               "departments.name ILIKE ?",
+                               "%#{department}%"
+                             )
+      end
+
+      results = employees.limit(limit).map do |employee|
+        {
+          id: employee.id,
+          name: employee.name,
+          email: employee.email,
+          designation: employee.designation,
+          department: employee.department.name
+        }
+      end
+
+      response(
+        JSON.pretty_generate(
+          count: results.size,
+          employees: results
+        )
+      )
+    end
+
+    private
+
+    def response(message)
+      MCP::Tool::Response.new([
+        {
+          type: "text",
+          text: message
+        }
+      ])
+    end
+  end
+end
