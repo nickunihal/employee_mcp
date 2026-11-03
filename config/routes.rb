@@ -27,7 +27,8 @@ mcp_server = MCP::Server.new(
 
 mcp_transport =
   MCP::Server::Transports::StreamableHTTPTransport.new(
-    mcp_server
+    mcp_server,
+    allowed_hosts: ["a6e7-49-37-235-219.ngrok-free.app"]
   )
 
 Rails.application.routes.draw do

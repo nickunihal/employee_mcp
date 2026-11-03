@@ -161,6 +161,151 @@ RSpec.describe SearchEmployeeService do
         expect(result).to contain_exactly(john, jane, mike)
       end
     end
+
+        context "when filtering by joined_after" do
+      let!(:recent_employee) do
+        Employee.create!(
+          name: "Recent Employee",
+          email: "recent@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-10-15 10:00:00")
+        )
+      end
+
+      it "returns employees who joined on or after the given date" do
+        result = described_class.call(joined_after: "2026-10-15")
+
+        expect(result).to include(recent_employee)
+        expect(result).not_to include(john, jane, mike)
+      end
+    end
+
+    context "when filtering by joined_before" do
+      let!(:older_employee) do
+        Employee.create!(
+          name: "Older Employee",
+          email: "older@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-09-15 10:00:00")
+        )
+      end
+
+      it "returns employees who joined on or before the given date" do
+        result = described_class.call(joined_before: "2026-09-15")
+
+        expect(result).to include(older_employee)
+        expect(result).not_to include(john, jane, mike)
+      end
+    end
+
+    context "when filtering by a date range" do
+      let!(:employee_in_range) do
+        Employee.create!(
+          name: "Employee In Range",
+          email: "inrange@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-10-15 10:00:00")
+        )
+      end
+
+      let!(:employee_before_range) do
+        Employee.create!(
+          name: "Employee Before Range",
+          email: "before@example.com",
+          department: hr,
+          joined_at: Time.zone.parse("2026-09-15 10:00:00")
+        )
+      end
+
+      let!(:employee_after_range) do
+        Employee.create!(
+          name: "Employee After Range",
+          email: "after@example.com",
+          department: hr,
+          joined_at: Time.zone.parse("2026-11-15 10:00:00")
+        )
+      end
+
+      it "returns only employees who joined within the date range" do
+        result = described_class.call(
+          joined_after: "2026-10-01",
+          joined_before: "2026-10-31"
+        )
+
+        expect(result).to contain_exactly(employee_in_range)
+      end
+
+      it "includes employees who joined on the boundary dates" do
+        start_employee = Employee.create!(
+          name: "Start Date Employee",
+          email: "start@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-10-01 00:00:00")
+        )
+
+        end_employee = Employee.create!(
+          name: "End Date Employee",
+          email: "end@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-10-31 23:59:59")
+        )
+
+        result = described_class.call(
+          joined_after: "2026-10-01",
+          joined_before: "2026-10-31"
+        )
+
+        expect(result).to contain_exactly(
+          employee_in_range,
+          start_employee,
+          end_employee
+        )
+      end
+    end
+
+    context "when combining department and date filters" do
+      let!(:engineering_employee) do
+        Employee.create!(
+          name: "Engineering New Joiner",
+          email: "engineering-new@example.com",
+          department: engineering,
+          joined_at: Time.zone.parse("2026-10-15 10:00:00")
+        )
+      end
+
+      let!(:hr_employee) do
+        Employee.create!(
+          name: "HR New Joiner",
+          email: "hr-new@example.com",
+          department: hr,
+          joined_at: Time.zone.parse("2026-10-15 10:00:00")
+        )
+      end
+
+      it "applies both filters together" do
+        result = described_class.call(
+          department: "Engineering",
+          joined_after: "2026-10-01",
+          joined_before: "2026-10-31"
+        )
+
+        expect(result).to contain_exactly(engineering_employee)
+      end
+    end
+
+    context "when invalid date filters are provided" do
+      it "raises an ArgumentError when joined_after is later than joined_before" do
+        expect {
+          described_class.call(
+            joined_after: "2026-11-01",
+            joined_before: "2026-10-01"
+          )
+        }.to raise_error(
+          ArgumentError,
+          "joined_after cannot be later than joined_before"
+        )
+      end
+    end
   end
 
   describe "initialization" do
@@ -174,6 +319,16 @@ RSpec.describe SearchEmployeeService do
       expect(service.name).to eq("John")
       expect(service.email).to eq("john@example.com")
       expect(service.department).to eq("Engineering")
+    end
+
+    it "stores the supplied date filters" do
+      service = described_class.new(
+        joined_after: "2026-10-01",
+        joined_before: "2026-10-31"
+      )
+
+      expect(service.joined_after).to eq(Date.new(2026, 10, 1))
+      expect(service.joined_before).to eq(Date.new(2026, 10, 31))
     end
   end
 end

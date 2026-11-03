@@ -1,8 +1,11 @@
+
 class EmployeeCountTool < MCP::Tool
   description <<~DESC
     Get employee counts grouped by department.
-    Optionally filter by department name.
-    Returns total employees and department-wise counts.
+    Optionally filter by department and joining date range.
+    Returns total employees, total departments and
+    department-wise employee counts.
+    Dates must use YYYY-MM-DD format.
   DESC
 
   input_schema(
@@ -10,6 +13,14 @@ class EmployeeCountTool < MCP::Tool
       department: {
         type: "string",
         description: "Optional department name to search for"
+      },
+      joined_after: {
+        type: "string",
+        description: "Optional inclusive joining date lower bound (YYYY-MM-DD)"
+      },
+      joined_before: {
+        type: "string",
+        description: "Optional inclusive joining date upper bound (YYYY-MM-DD)"
       }
     }
   )
@@ -22,11 +33,21 @@ class EmployeeCountTool < MCP::Tool
   )
 
   class << self
-    def call(department: nil, server_context: )
-
-      result = EmployeeCountService.call(department: department)
+    def call(
+      department: nil,
+      joined_after: nil,
+      joined_before: nil,
+      server_context:
+    )
+      result = EmployeeCountService.call(
+        department: department,
+        joined_after: joined_after,
+        joined_before: joined_before
+      )
 
       response(JSON.pretty_generate(result))
+    rescue ArgumentError => e
+      response("Invalid date filter: #{e.message}")
     end
 
     private
@@ -39,6 +60,5 @@ class EmployeeCountTool < MCP::Tool
         }
       ])
     end
-
   end
 end
