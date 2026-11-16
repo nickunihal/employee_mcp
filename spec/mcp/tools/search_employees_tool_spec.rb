@@ -31,6 +31,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: nil,
+          designation: nil,
           joined_after: nil,
           joined_before: nil
         ).and_call_original
@@ -65,6 +66,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: "Engineering",
+          designation: nil,
           joined_after: nil,
           joined_before: nil
         ).and_call_original
@@ -76,12 +78,55 @@ RSpec.describe SearchEmployeesTool do
       end
     end
 
+    context "when searching by designation" do
+      it "passes designation to the search service" do
+        expect(SearchEmployeeService).to receive(:call).with(
+          name: nil,
+          email: nil,
+          department: nil,
+          designation: "Software Engineer",
+          joined_after: nil,
+          joined_before: nil
+        ).and_call_original
+
+        described_class.call(
+          designation: "Software Engineer",
+          server_context: nil
+        )
+      end
+
+      it "returns employees matching the designation" do
+        result = described_class.call(
+          designation: "Software Engineer",
+          server_context: nil
+        )
+
+        data = JSON.parse(result.content.first[:text])
+
+        expect(data["count"]).to eq(1)
+        expect(data["employees"].first["id"]).to eq(employee.id)
+      end
+
+      it "supports partial designation matching" do
+        result = described_class.call(
+          designation: "Engineer",
+          server_context: nil
+        )
+
+        data = JSON.parse(result.content.first[:text])
+
+        expect(data["count"]).to eq(1)
+        expect(data["employees"].first["name"]).to eq("John Doe")
+      end
+    end
+
     context "when multiple filters are provided" do
       it "passes all filters to the search service" do
         expect(SearchEmployeeService).to receive(:call).with(
           name: "John",
           email: "john@example.com",
           department: "Engineering",
+          designation: "Software Engineer",
           joined_after: nil,
           joined_before: nil
         ).and_call_original
@@ -90,6 +135,7 @@ RSpec.describe SearchEmployeesTool do
           name: "John",
           email: "john@example.com",
           department: "Engineering",
+          designation: "Software Engineer",
           server_context: nil
         )
       end
@@ -111,6 +157,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: nil,
+          designation: nil,
           joined_after: "2026-10-01",
           joined_before: nil
         ).and_call_original
@@ -150,6 +197,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: nil,
+          designation: nil,
           joined_after: nil,
           joined_before: "2026-09-30"
         ).and_call_original
@@ -189,6 +237,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: nil,
+          designation: nil,
           joined_after: "2026-10-01",
           joined_before: "2026-10-31"
         ).and_call_original
@@ -230,6 +279,7 @@ RSpec.describe SearchEmployeesTool do
           name: nil,
           email: nil,
           department: "Engineering",
+          designation: nil,
           joined_after: "2026-10-01",
           joined_before: "2026-10-31"
         ).and_call_original
@@ -264,7 +314,9 @@ RSpec.describe SearchEmployeesTool do
           server_context: nil
         )
 
-        expect(result.content.first[:text]).to include("Invalid search filter:")
+        expect(result.content.first[:text]).to include(
+          "Invalid search filter:"
+        )
       end
 
       it "returns an error message when the date range is reversed" do

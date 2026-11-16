@@ -69,6 +69,11 @@ class DepartmentOverviewPrompt < MCP::Prompt
                   the discrepancy instead of assuming they match.
                 - If no employees are found, clearly state that.
                 - Present the final report in readable Markdown.
+                - When some employees have designations and others do not,
+                  accurately distinguish between them.
+                - Do not say that no designations are available if at least
+                  one employee has a designation.
+                - Summarize the available designations using actual data.
               PROMPT
             )
           )

@@ -1,9 +1,19 @@
 class SearchEmployeesTool < MCP::Tool
   description <<~DESC
-    Search or list employees by name, email, department or joining date.
+    Search or list employees by name, email, department, designation
+    or joining date.
+
     All filters are optional.
+
+    Use designation to search by job title, such as CFO, CTO,
+    Manager or Engineer.
+
+    Use name only to search by employee name.
+
+    Multiple filters can be combined.
     If no filters are provided, returns employees ordered by ID.
     Dates must use YYYY-MM-DD format.
+
     Returns employee details including name, email, designation,
     department and joining date.
   DESC
@@ -21,6 +31,10 @@ class SearchEmployeesTool < MCP::Tool
       department: {
         type: "string",
         description: "Department name to filter by"
+      },
+      designation: {
+        type: "string",
+        description: "Employee designation to search for"
       },
       joined_after: {
         type: "string",
@@ -40,10 +54,26 @@ class SearchEmployeesTool < MCP::Tool
   )
 
   class << self
-    def call(name: nil, email: nil, department: nil, joined_after: nil, joined_before: nil, limit: 20, server_context: )
+    def call(
+      name: nil,
+      email: nil,
+      department: nil,
+      designation: nil,
+      joined_after: nil,
+      joined_before: nil,
+      limit: 20,
+      server_context:
+    )
       limit = [[limit.to_i, 1].max, 50].min
 
-      employees = SearchEmployeeService.call(name: name,email: email,department: department,joined_after: joined_after,joined_before: joined_before)
+      employees = SearchEmployeeService.call(
+        name: name,
+        email: email,
+        department: department,
+        designation: designation,
+        joined_after: joined_after,
+        joined_before: joined_before
+      )
 
       results = employees.order(:id).limit(limit).map do |employee|
         {
@@ -51,7 +81,7 @@ class SearchEmployeesTool < MCP::Tool
           name: employee.name,
           email: employee.email,
           designation: employee.designation,
-          department: employee.department.name,
+          department: employee.department&.name,
           joined_at: employee.joined_at
         }
       end
@@ -65,7 +95,6 @@ class SearchEmployeesTool < MCP::Tool
     rescue ArgumentError => e
       response("Invalid search filter: #{e.message}")
     end
-
     private
 
     def response(message)

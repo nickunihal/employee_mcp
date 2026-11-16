@@ -1,3 +1,4 @@
+
 require "rails_helper"
 
 RSpec.describe SearchEmployeeService do
@@ -106,12 +107,39 @@ RSpec.describe SearchEmployeeService do
       end
     end
 
+    context "when filtering by designation" do
+      it "returns employees matching the designation" do
+        result = described_class.call(designation: "Software Engineer")
+
+        expect(result).to contain_exactly(john)
+      end
+
+      it "performs case-insensitive matching" do
+        result = described_class.call(designation: "software engineer")
+
+        expect(result).to contain_exactly(john)
+      end
+
+      it "supports partial designation matching" do
+        result = described_class.call(designation: "Engineer")
+
+        expect(result).to contain_exactly(john, jane)
+      end
+
+      it "returns no employees when designation does not match" do
+        result = described_class.call(designation: "CFO")
+
+        expect(result).to be_empty
+      end
+    end
+
     context "when multiple filters are provided" do
       it "applies all filters together" do
         result = described_class.call(
           name: "John Doe",
           email: "john@example.com",
-          department: "Engineering"
+          department: "Engineering",
+          designation: "Software Engineer"
         )
 
         expect(result).to contain_exactly(john)
@@ -125,6 +153,15 @@ RSpec.describe SearchEmployeeService do
 
         expect(result).to be_empty
       end
+
+      it "combines department and designation filters" do
+        result = described_class.call(
+          department: "Engineering",
+          designation: "Senior Engineer"
+        )
+
+        expect(result).to contain_exactly(jane)
+      end
     end
 
     context "when special SQL wildcard characters are provided" do
@@ -136,6 +173,18 @@ RSpec.describe SearchEmployeeService do
 
       it "treats underscores as literal characters" do
         result = described_class.call(name: "_")
+
+        expect(result).to be_empty
+      end
+
+      it "treats percentage signs in designation as literal characters" do
+        result = described_class.call(designation: "%")
+
+        expect(result).to be_empty
+      end
+
+      it "treats underscores in designation as literal characters" do
+        result = described_class.call(designation: "_")
 
         expect(result).to be_empty
       end
@@ -155,14 +204,15 @@ RSpec.describe SearchEmployeeService do
         result = described_class.call(
           name: "",
           email: "",
-          department: ""
+          department: "",
+          designation: ""
         )
 
         expect(result).to contain_exactly(john, jane, mike)
       end
     end
 
-        context "when filtering by joined_after" do
+    context "when filtering by joined_after" do
       let!(:recent_employee) do
         Employee.create!(
           name: "Recent Employee",
@@ -313,12 +363,14 @@ RSpec.describe SearchEmployeeService do
       service = described_class.new(
         name: "John",
         email: "john@example.com",
-        department: "Engineering"
+        department: "Engineering",
+        designation: "Software Engineer"
       )
 
       expect(service.name).to eq("John")
       expect(service.email).to eq("john@example.com")
       expect(service.department).to eq("Engineering")
+      expect(service.designation).to eq("Software Engineer")
     end
 
     it "stores the supplied date filters" do

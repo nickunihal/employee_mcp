@@ -1,12 +1,13 @@
 class SearchEmployeeService
-  attr_reader :name, :email, :department, :joined_after, :joined_before
+  attr_reader :name, :email, :department, :joined_after, :joined_before, :designation
 
-  def initialize(name: nil, email: nil, department: nil, joined_after: nil, joined_before: nil)
+  def initialize(name: nil, email: nil, department: nil, joined_after: nil, joined_before: nil, designation: nil)
     @name = name
     @email = email
     @department = department
     @joined_after = parse_date(joined_after)
     @joined_before = parse_date(joined_before)
+    @designation = designation
 
     validate_date_range
   end
@@ -17,6 +18,7 @@ class SearchEmployeeService
     scope = filter_by_name(scope)
     scope = filter_by_email(scope)
     scope = filter_by_department(scope)
+    scope = filter_by_designation(scope)
     scope = filter_by_joined_after(scope)
     scope = filter_by_joined_before(scope)
 
@@ -46,6 +48,12 @@ class SearchEmployeeService
 
     scope.joins(:department)
          .where("departments.name ILIKE ?", "%#{sanitize_sql_like(department)}%")
+  end
+
+  def filter_by_designation(scope)
+    return scope if designation.blank?
+
+    scope.where("employees.designation ILIKE ?", "%#{sanitize_sql_like(designation)}%")    
   end
 
   def filter_by_joined_after(scope)
